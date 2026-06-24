@@ -1,0 +1,11 @@
+[
+  {
+    "vendorId": "0C2E",
+    "openOptions": {
+      "baudRate": 115200
+    },
+    "parserOptions": {
+      "regex": "\r"
+    }
+  }
+]
