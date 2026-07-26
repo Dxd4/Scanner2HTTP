@@ -1,16 +1,19 @@
-import { plainToInstance } from 'class-transformer';
 import { promises as fs } from 'fs';
 import { merge } from 'lodash-es';
-import { validateOrReject } from 'class-validator';
 import { IConfigs } from './interfaces/IConfigs.js';
-import { ScannerConfig } from './models/scanner/ScannerConfig.js';
-import { WhiteList } from './models/WhiteList.js';
+import { ScannerConfigType, WhiteListType } from './schemas/ConfigSchema.js';
+import { logger } from '../utils/logger.js';
+import {
+  ScannerConfigSchema,
+  WhiteListSchema,
+} from './schemas/ConfigSchema.js';
+import z from 'zod';
 
 export class Configs implements IConfigs {
   private configsFilepath: string;
   private whitelistFilePath: string;
-  private scannerConfigs: ScannerConfig[] = [];
-  private whiteList: WhiteList[] = [];
+  private scannerConfigs: ScannerConfigType[] = [];
+  private whiteList: WhiteListType[] = [];
 
   constructor(
     configsFilepath: string = 'configs.json',
@@ -26,26 +29,28 @@ export class Configs implements IConfigs {
   }
 
   private async loadScannerConfigs() {
-    const rawText = await fs.readFile(this.configsFilepath, 'utf-8');
-    const parsed: unknown = JSON.parse(rawText);
-    const rawArray = Array.isArray(parsed) ? parsed : [];
-
-    const instances = plainToInstance(ScannerConfig, rawArray, {
-      excludeExtraneousValues: true,
-    });
-
     try {
-      await Promise.all(instances.map((item) => validateOrReject(item)));
-    } catch (errors) {
+      const rawText = await fs.readFile(this.configsFilepath, 'utf-8');
+      const parsed: unknown = JSON.parse(rawText);
+      const rawArray = Array.isArray(parsed) ? parsed : [];
+
+      this.scannerConfigs = z.array(ScannerConfigSchema).parse(rawArray);
+      logger.info(
+        { count: this.scannerConfigs.length },
+        'Scanner configurations loaded successfully',
+      );
+    } catch (error) {
+      logger.error(
+        { error, filepath: this.configsFilepath },
+        'Scanner configurations validation failed',
+      );
       throw new Error(`${this.configsFilepath} validation failed`, {
-        cause: errors,
+        cause: error,
       });
     }
-
-    this.scannerConfigs = instances;
   }
 
-  private async saveScannerConfigs(scannerConfigs?: ScannerConfig[]) {
+  private async saveScannerConfigs(scannerConfigs?: ScannerConfigType[]) {
     if (scannerConfigs) {
       this.scannerConfigs = scannerConfigs;
     }
@@ -71,14 +76,14 @@ export class Configs implements IConfigs {
     vendorId?: string,
     productId?: string,
     serialNumber?: string,
-  ) {
+  ): ScannerConfigType {
     const defaultConfig = {
       vendorId: vendorId,
       productId: productId,
       serialNumber: serialNumber,
       openOptions: { baudRate: 115200 },
       parserOptions: { regex: '(\r\n|\r|\n)$' },
-    } as ScannerConfig;
+    };
 
     const merged = merge(
       defaultConfig,
@@ -91,26 +96,28 @@ export class Configs implements IConfigs {
   }
 
   private async loadWhiteList() {
-    const rawText = await fs.readFile(this.whitelistFilePath, 'utf-8');
-    const parsed: unknown = JSON.parse(rawText);
-    const rawArray = Array.isArray(parsed) ? parsed : [];
-
-    const instances = plainToInstance(WhiteList, rawArray, {
-      excludeExtraneousValues: true,
-    });
-
     try {
-      await Promise.all(instances.map((item) => validateOrReject(item)));
-    } catch (errors) {
+      const rawText = await fs.readFile(this.whitelistFilePath, 'utf-8');
+      const parsed: unknown = JSON.parse(rawText);
+      const rawArray = Array.isArray(parsed) ? parsed : [];
+
+      this.whiteList = z.array(WhiteListSchema).parse(rawArray);
+      logger.info(
+        { count: this.whiteList.length },
+        'Whitelist loaded successfully',
+      );
+    } catch (error) {
+      logger.error(
+        { error, filepath: this.whitelistFilePath },
+        'Whitelist validation failed',
+      );
       throw new Error(`${this.whitelistFilePath} validation failed`, {
-        cause: errors,
+        cause: error,
       });
     }
-
-    this.whiteList = instances;
   }
 
-  private async saveWhiteList(whiteList?: WhiteList[]) {
+  private async saveWhiteList(whiteList?: WhiteListType[]) {
     if (whiteList) {
       this.whiteList = whiteList;
     }

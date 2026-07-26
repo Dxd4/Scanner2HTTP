@@ -36,7 +36,6 @@ export class ScannerSession extends EventEmitter implements IScannerSession {
     abortController: AbortController,
     timeout: number,
   ): Promise<ScanResult> {
-    console.debug(`Create session: ${this.id}`);
     return new Promise((resolve, reject) => {
       const onData = (data: Buffer) => {
         if (this.blockedBy !== undefined) return;
@@ -62,13 +61,12 @@ export class ScannerSession extends EventEmitter implements IScannerSession {
         reject(new TimeoutError(`Timeout: ${timeout}ms`));
       }, timeout);
 
-      const cleanup = () => {
-        console.debug(`Cleanup session: ${this.id}`);
+      function cleanup() {
         if (timeoutTimer) clearTimeout(timeoutTimer);
         scanner.off('data', onData);
         scanner.off('error', onError);
         abortController.signal.removeEventListener('abort', onAbort);
-      };
+      }
 
       this.scanner.on('data', onData);
       this.scanner.on('error', onError);

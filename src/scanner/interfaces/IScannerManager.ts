@@ -14,4 +14,5 @@ export interface IScannerManager extends EventEmitter {
     signal?: AbortSignal,
   ): Promise<ScanResult>;
   stopScan(scannerId: string): void;
+  isScannerAlive(scannerId: string): boolean;
 }

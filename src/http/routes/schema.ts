@@ -37,3 +37,7 @@ export const ErrorResponseSchema = z.object({
   status: z.literal('error'),
   message: z.string(),
 });
+
+export const IsAliveParamsSchema = z.object({
+  id: z.uuid({ version: 'v5' }),
+});

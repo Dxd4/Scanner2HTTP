@@ -171,4 +171,9 @@ export class ScannerManager extends EventEmitter implements IScannerManager {
 
     this.closeTimers.set(scannerId, timer);
   }
+  isScannerAlive(scannerId: string): boolean {
+    const scanner = this.getScanner(scannerId);
+    if (scanner) return true;
+    return false;
+  }
 }

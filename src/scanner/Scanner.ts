@@ -2,19 +2,20 @@ import { RegexParser, SerialPort } from 'serialport';
 import type { AutoDetectTypes, PortInfo } from '@serialport/bindings-cpp';
 import EventEmitter from 'events';
 import AsyncLock from 'async-lock';
+import { logger } from '../utils/logger.js';
 import { SerialError } from '../errors/SerialError.js';
 import { IScanner } from './interfaces/IScanner.js';
-import { ScannerConfig } from './models/scanner/ScannerConfig.js';
+import { ScannerConfigType } from './schemas/ConfigSchema.js';
 
 export class Scanner extends EventEmitter implements IScanner {
   readonly id: string;
-  readonly config: ScannerConfig;
+  readonly config: ScannerConfigType;
   readonly portInfo: PortInfo;
   private serialPort: SerialPort<AutoDetectTypes> | undefined;
   private serialParser: RegexParser | undefined;
   private lock = new AsyncLock();
 
-  constructor(id: string, port: PortInfo, config: ScannerConfig) {
+  constructor(id: string, port: PortInfo, config: ScannerConfigType) {
     super();
     this.id = id;
     this.portInfo = port;
@@ -34,7 +35,7 @@ export class Scanner extends EventEmitter implements IScanner {
       this.serialParser = parser;
 
       const onData = (data: Buffer) => {
-        console.debug('Scanned:', data.toString());
+        logger.debug({ data: data.toString() }, 'Scanned');
         this.emit('data', data);
       };
 

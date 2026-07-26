@@ -1,4 +1,4 @@
-import { ScannerConfig } from '../models/scanner/ScannerConfig.js';
+import { ScannerConfigType } from '../schemas/ConfigSchema.js';
 
 export interface IConfigs {
   init(): Promise<void>;
@@ -6,7 +6,7 @@ export interface IConfigs {
     vendorId?: string,
     productId?: string,
     serialNumber?: string,
-  ): ScannerConfig;
+  ): ScannerConfigType;
   isWhiteListed(
     vendorId?: string,
     productId?: string,

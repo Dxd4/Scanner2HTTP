@@ -12,6 +12,7 @@ import {
   SuccessResponseSchema,
   ErrorResponseSchema,
   ScannersResponseSchema,
+  IsAliveParamsSchema,
 } from './schema.js';
 
 function scannerRoutes(app: FastifyInstance, manager: IScannerManager) {
@@ -79,6 +80,28 @@ function scannerRoutes(app: FastifyInstance, manager: IScannerManager) {
       }));
 
       return reply.send(list);
+    },
+  );
+
+  app.withTypeProvider<ZodTypeProvider>().get(
+    '/scanners/:id/isAlive',
+    {
+      schema: {
+        params: IsAliveParamsSchema,
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+
+      try {
+        const result = manager.isScannerAlive(id);
+        if (result) reply.status(200).send(result);
+        reply.status(404).send();
+      } catch {
+        reply
+          .status(500)
+          .send({ status: 'error', message: 'Internal server error' });
+      }
     },
   );
 }
