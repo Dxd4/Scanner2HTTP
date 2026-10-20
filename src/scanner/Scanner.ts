@@ -1,11 +1,21 @@
-import { RegexParser, SerialPort } from 'serialport';
 import type { AutoDetectTypes, PortInfo } from '@serialport/bindings-cpp';
-import EventEmitter from 'events';
 import AsyncLock from 'async-lock';
-import { logger } from '../utils/logger.js';
+import EventEmitter from 'events';
+import { RegexParser, SerialPort } from 'serialport';
 import { SerialError } from '../errors/SerialError.js';
+import { logger } from '../utils/logger.js';
 import { IScanner } from './interfaces/IScanner.js';
 import { ScannerConfigType } from './schemas/ConfigSchema.js';
+
+type StripUndefined<T> = {
+  [K in keyof T as undefined extends T[K] ? never : K]: T[K];
+};
+
+function stripUndefined<T extends object>(obj: T): StripUndefined<T> {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v !== undefined),
+  ) as StripUndefined<T>;
+}
 
 export class Scanner extends EventEmitter implements IScanner {
   readonly id: string;
@@ -75,9 +85,11 @@ export class Scanner extends EventEmitter implements IScanner {
 
     const serialPort = new SerialPort({
       path: this.portInfo.path,
-      ...this.config.openOptions,
+      ...stripUndefined(this.config.openOptions),
     });
-    const parser = serialPort.pipe(new RegexParser(this.config.parserOptions));
+    const parser = serialPort.pipe(
+      new RegexParser(stripUndefined(this.config.parserOptions)),
+    );
     return { serialPort, parser };
   }
 }
