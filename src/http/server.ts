@@ -1,14 +1,16 @@
-import Fastify from 'fastify';
-import type { FastifyInstance } from 'fastify';
-import {
-  serializerCompiler,
-  validatorCompiler,
-  jsonSchemaTransform,
-  type ZodTypeProvider,
-} from 'fastify-type-provider-zod';
+import fastifyCors from '@fastify/cors';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
+import type { FastifyInstance } from 'fastify';
+import Fastify from 'fastify';
+import {
+  jsonSchemaTransform,
+  serializerCompiler,
+  validatorCompiler,
+  type ZodTypeProvider,
+} from 'fastify-type-provider-zod';
 import { ScannerManager } from '../scanner/ScannerManager.js';
+import { getEnv } from '../utils/env.js';
 import scannerRoutes from './routes/scanner.js';
 
 class HTTPServer {
@@ -43,6 +45,17 @@ class HTTPServer {
 
     this.fastify.setValidatorCompiler(validatorCompiler);
     this.fastify.setSerializerCompiler(serializerCompiler);
+
+    const env = getEnv();
+    const corsOrigins = env.CORS_ORIGIN?.split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean);
+    if (corsOrigins?.length) {
+      await this.fastify.register(fastifyCors, { origin: corsOrigins });
+    } else if (env.NODE_ENV !== 'production') {
+      // Allow any origin in development for convenience.
+      await this.fastify.register(fastifyCors);
+    }
 
     if (process.env.NODE_ENV !== 'production') {
       await this.swaggerInit(this.fastify);

@@ -138,4 +138,12 @@ export class Configs implements IConfigs {
     }
     return false;
   }
+
+  hasScannerConfig(
+    vendorId?: string,
+    productId?: string,
+    serialNumber?: string,
+  ) {
+    return !!this.getScannerByInfo(vendorId, productId, serialNumber);
+  }
 }

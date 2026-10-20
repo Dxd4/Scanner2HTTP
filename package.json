@@ -1,10 +1,10 @@
 {
   "name": "scanner2http",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "HTTP service that exposes serial (COM) port barcode scanners over a REST API",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run --passWithNoTests",
     "format": "prettier . --write --list-different",
     "lint": "eslint . --ext .js,.ts .",
     "lint:fix": "eslint . --fix --ext .js,.ts",
@@ -12,8 +12,17 @@
     "build": "tsc",
     "start": "node dist/index.js"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "type": "module",
-  "keywords": [],
+  "keywords": [
+    "scanner",
+    "barcode",
+    "serialport",
+    "http",
+    "rest"
+  ],
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {

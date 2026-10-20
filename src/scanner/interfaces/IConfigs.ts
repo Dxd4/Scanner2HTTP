@@ -12,4 +12,9 @@ export interface IConfigs {
     productId?: string,
     serialNumber?: string,
   ): boolean;
+  hasScannerConfig(
+    vendorId?: string,
+    productId?: string,
+    serialNumber?: string,
+  ): boolean;
 }

@@ -13,6 +13,8 @@ import { IScannerSessionManagerFactory } from './interfaces/IScannerSessionManag
 import { Scanner } from './Scanner.js';
 import { ScannerSessionManager } from './ScannerSessionManager.js';
 import { ScanResult } from './types/ScanResult.js';
+import { ScannerPortInfo } from './types/ScannerPortInfo.js';
+import { IScannerSession } from './interfaces/IScannerSession.js';
 import { generateScannerIdFromPort } from './utils/scanner-id.js';
 
 export class ScannerManager extends EventEmitter implements IScannerManager {
@@ -54,6 +56,31 @@ export class ScannerManager extends EventEmitter implements IScannerManager {
 
   get scanners() {
     return Array.from(this.scannersMap.values());
+  }
+  get sessions(): IScannerSession[] {
+    return this.sessionManager.sessions;
+  }
+  async listPorts(): Promise<ScannerPortInfo[]> {
+    const portList = await SerialPort.list();
+    return portList.map((port) => ({
+      path: port.path,
+      manufacturer: port.manufacturer,
+      serialNumber: port.serialNumber,
+      vendorId: port.vendorId,
+      productId: port.productId,
+      pnpId: port.pnpId,
+      valid: this.isValidPort(port),
+      whitelisted: this.configs.isWhiteListed(
+        port.vendorId,
+        port.productId,
+        port.serialNumber,
+      ),
+      configured: this.configs.hasScannerConfig(
+        port.vendorId,
+        port.productId,
+        port.serialNumber,
+      ),
+    }));
   }
   private addScannerByPort(port: PortInfo): void {
     const scannerId = generateScannerIdFromPort(port);

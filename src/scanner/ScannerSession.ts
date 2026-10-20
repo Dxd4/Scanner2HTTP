@@ -40,9 +40,11 @@ export class ScannerSession extends EventEmitter implements IScannerSession {
       const onData = (data: Buffer) => {
         if (this.blockedBy !== undefined) return;
         cleanup();
+        const encoding = scanner.config.parserOptions
+          .encoding as BufferEncoding;
         resolve({
           status: 'success',
-          data: data.toString('utf-8'),
+          data: data.toString(encoding ?? 'utf-8'),
         });
       };
 

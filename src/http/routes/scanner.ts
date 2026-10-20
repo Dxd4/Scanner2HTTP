@@ -13,6 +13,11 @@ import {
   ErrorResponseSchema,
   ScannersResponseSchema,
   IsAliveParamsSchema,
+  IsAliveResponseSchema,
+  PortsResponseSchema,
+  StopResponseSchema,
+  SessionParamsSchema,
+  SessionsResponseSchema,
 } from './schema.js';
 
 function scannerRoutes(app: FastifyInstance, manager: IScannerManager) {
@@ -88,19 +93,113 @@ function scannerRoutes(app: FastifyInstance, manager: IScannerManager) {
     {
       schema: {
         params: IsAliveParamsSchema,
+        response: {
+          200: IsAliveResponseSchema,
+          default: ErrorResponseSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+
+      const alive = manager.isScannerAlive(id);
+      if (!alive) {
+        return reply.status(404).send({
+          status: 'error',
+          message: `Not found scanner with id: ${id}`,
+        });
+      }
+      return reply.status(200).send({ alive: true });
+    },
+  );
+
+  app.withTypeProvider<ZodTypeProvider>().post(
+    '/scanners/:id/stop',
+    {
+      schema: {
+        params: PollParamsSchema,
+        response: {
+          200: StopResponseSchema,
+          default: ErrorResponseSchema,
+        },
       },
     },
     async (request, reply) => {
       const { id } = request.params;
 
       try {
-        const result = manager.isScannerAlive(id);
-        if (result) reply.status(200).send(result);
-        reply.status(404).send();
-      } catch {
-        reply
-          .status(500)
-          .send({ status: 'error', message: 'Internal server error' });
+        manager.stopScan(id);
+        return reply.send({ status: 'success' });
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          return reply
+            .status(404)
+            .send({ status: 'error', message: err.message });
+        }
+        throw err;
+      }
+    },
+  );
+
+  app.withTypeProvider().get(
+    '/ports',
+    {
+      schema: {
+        response: {
+          200: PortsResponseSchema,
+        },
+      },
+    },
+    async (_request, reply) => {
+      return reply.send(await manager.listPorts());
+    },
+  );
+
+  app.withTypeProvider().get(
+    '/sessions',
+    {
+      schema: {
+        response: {
+          200: SessionsResponseSchema,
+        },
+      },
+    },
+    async (_request, reply) => {
+      const list = manager.sessions.map((session) => ({
+        id: session.id,
+        scannerId: session.scanner.id,
+        lockState: session.lockState,
+        blockedBy: session.getBlock(),
+      }));
+
+      return reply.send(list);
+    },
+  );
+
+  app.withTypeProvider<ZodTypeProvider>().delete(
+    '/sessions/:id',
+    {
+      schema: {
+        params: SessionParamsSchema,
+        response: {
+          200: StopResponseSchema,
+          default: ErrorResponseSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const { id } = request.params;
+
+      try {
+        manager.stopSession(id);
+        return reply.send({ status: 'success' });
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          return reply
+            .status(404)
+            .send({ status: 'error', message: err.message });
+        }
+        throw err;
       }
     },
   );
