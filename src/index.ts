@@ -10,9 +10,10 @@ async function main() {
   const manager = new ScannerManager(configs);
   const server = new HTTPServer(manager, env.HOST, env.PORT);
   await server.start();
+    logger.info(`Server started: http://${server.host}:${server.port}`);
 }
 
 main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
+  logger.error(error instanceof Error ? error.message : error);
   process.exit(1);
 });
